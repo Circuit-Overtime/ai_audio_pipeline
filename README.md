@@ -55,6 +55,85 @@ This structure ensures a consistent environment for development, testing, and pr
 
 ---
 
+## API Endpoints
+
+### `/audio` Endpoint
+
+#### `GET /audio`
+
+Generate audio from text using optional system prompt and voice.
+
+**Query Parameters:**
+
+- `text` (string, required): The text to synthesize.
+- `system` (string, optional): System prompt for context.
+- `voice` (string, optional): Voice selection (default: `alloy`).
+
+**Example:**
+
+```bash
+curl -X GET "http://localhost:8000/audio?text=Hello%20world&voice=alloy"
+```
+
+#### `POST /audio`
+
+Flexible endpoint for advanced audio synthesis, voice cloning, and speech input.
+
+**Request Body (JSON):**
+
+```json
+{
+    "messages": [
+        {
+            "role": "system",
+            "content": [
+                { "type": "text", "text": "You are a helpful assistant." }
+            ]
+        },
+        {
+            "role": "user",
+            "content": [
+                { "type": "text", "text": "Say hello in a cheerful voice." },
+                { "type": "voice", "voice": "alloy" }
+                // Optionally, add clone_audio or speech_audio as needed
+            ]
+        }
+    ]
+}
+```
+
+**Example:**
+
+```bash
+curl -X POST http://localhost:8000/audio \
+    -H "Content-Type: application/json" \
+    -d '{
+        "messages": [
+            {
+                "role": "system",
+                "content": [
+                    { "type": "text", "text": "You are a helpful assistant." }
+                ]
+            },
+            {
+                "role": "user",
+                "content": [
+                    { "type": "text", "text": "Say hello in a cheerful voice." },
+                    { "type": "voice", "voice": "alloy" }
+                ]
+            }
+        ]
+    }' --output output.wav
+```
+
+**Notes:**
+
+- For voice cloning, include a `clone_audio` item with base64-encoded WAV audio.
+- For speech input, include a `speech_audio` item with base64-encoded WAV audio.
+- The response is a WAV audio file or a JSON object, depending on the request and processing result.
+
+---
+
 ## License
 
 Audio Pollinations is released under the GNU General Public License v3.0 (GPL-3.0). This license ensures that the project remains free and open-source, allowing anyone to use, modify, and distribute the software, provided that any derivative works are also distributed under the same license. For full details, see the [LICENSE](./LICENSE) file.
