@@ -7,28 +7,17 @@ import base64
 from flask import Flask, request, jsonify, Response, g
 from flask_cors import CORS
 from loguru import logger
-from utility import save_temp_audio, cleanup_temp_file
+from utility import save_temp_audio, cleanup_temp_file, validate_and_decode_base64_audio, encode_audio_base64
 from requestID import reqID
 import asyncio
+import threading
+import subprocess
+from voiceMap import VOICE_BASE64_MAP
 
 from server import run_audio_pipeline
 
 app = Flask(__name__)
 CORS(app)
-
-def validate_and_decode_base64_audio(b64str, max_duration_sec=None):
-    try:
-        audio_bytes = base64.b64decode(b64str)
-        with io.BytesIO(audio_bytes) as audio_io:
-            with wave.open(audio_io, "rb") as wav_file:
-                n_frames = wav_file.getnframes()
-                framerate = wav_file.getframerate()
-                duration = n_frames / float(framerate)
-                if max_duration_sec and duration > max_duration_sec:
-                    raise Exception(f"Audio duration {duration:.2f}s exceeds max allowed {max_duration_sec}s")
-        return audio_bytes
-    except Exception as e:
-        raise Exception(f"Invalid base64 WAV audio: {e}")
 
 @app.before_request
 def before_request():
@@ -58,18 +47,26 @@ def audio_endpoint():
         try:
             text = request.args.get("text")
             system = request.args.get("system")
-            voice = request.args.get("voice", "alloy")
+            voice = request.args.get("voice")
+            voice_path = None
+            if VOICE_BASE64_MAP.get(voice):
+                named_voice_path = VOICE_BASE64_MAP.get(voice)
+                coded = encode_audio_base64(named_voice_path)
+                voice_path = save_temp_audio(coded, request_id, "clone")
+            else:
+                named_voice_path = VOICE_BASE64_MAP.get("alloy")
+                coded = encode_audio_base64(named_voice_path)
+                voice_path = save_temp_audio(coded, request_id, "clone")
+                
 
             if not text or not isinstance(text, str) or not text.strip():
                 return jsonify({"error": {"message": "Missing required 'text' parameter.", "code": 400}}), 400
 
-            # Only text, system, and voice allowed in GET
-            # No audio or clone audio allowed in GET
             result = asyncio.run(run_audio_pipeline(
                 reqID=request_id,
                 text=text,
                 system_instruction=system,
-                voice=voice
+                voice=voice_path
             ))
 
             if result["type"] == "audio":
@@ -112,41 +109,59 @@ def audio_endpoint():
                 return jsonify({"error": {"message": "Missing or invalid 'content' in user message.", "code": 400}}), 400
 
             text = None
-            clone_audio_b64 = None
+            voice_name = "alloy"
+            voice_b64 = None
             clone_audio_transcript = None
             speech_audio_b64 = None
-            voice = "alloy"
 
             for item in user_content:
                 if isinstance(item, dict):
                     if item.get("type") == "text":
                         text = item.get("text")
-                    elif item.get("type") == "clone_audio":
-                        clone_audio_b64 = item.get("audio", {}).get("data")
+                    elif item.get("type") == "voice":
+                        v = item.get("voice", {})
+                        if isinstance(v, dict):
+                            voice_name = v.get("name", "alloy")
+                            if v.get("data"):
+                                voice_b64 = v.get("data")
                     elif item.get("type") == "clone_audio_transcript":
                         clone_audio_transcript = item.get("audio_text")
                     elif item.get("type") == "speech_audio":
                         speech_audio_b64 = item.get("audio", {}).get("data")
-                    elif item.get("type") == "voice":
-                        voice = item.get("voice", "alloy")
 
             if not text or not isinstance(text, str) or not text.strip():
                 return jsonify({"error": {"message": "Missing required 'text' in content.", "code": 400}}), 400
 
-            # If both clone_audio and voice are provided, error
-            if clone_audio_b64 and voice and voice != "alloy":
-                return jsonify({"error": {"message": "Provide either 'clone_audio' or 'voice', not both.", "code": 400}}), 400
+            # If both voice_b64 and a non-default voice_name are provided, error
+            if voice_b64 and voice_name and voice_name != "alloy":
+                return jsonify({"error": {"message": "Provide either 'voice.data' (base64) or 'voice.name', not both.", "code": 400}}), 400
 
-            # Validate base64 audio if present
-            clone_audio_path = None
+            # Validate and save base64 audio if present
+            voice_path = None
             speech_audio_path = None
 
-            if clone_audio_b64:
+            if voice_b64:
                 try:
-                    decoded = validate_and_decode_base64_audio(clone_audio_b64, max_duration_sec=5)
-                    clone_audio_path = save_temp_audio(decoded, request_id, "clone")
+                    decoded = validate_and_decode_base64_audio(voice_b64, max_duration_sec=5)
+                    voice_path = save_temp_audio(decoded, request_id, "clone")
                 except Exception as e:
-                    return jsonify({"error": {"message": f"Invalid clone_audio: {e}", "code": 400}}), 400
+                    return jsonify({"error": {"message": f"Invalid voice audio: {e}", "code": 400}}), 400
+            elif voice_name and not voice_b64:
+                try:
+                    if VOICE_BASE64_MAP.get(voice_name):
+                        named_voice_path = VOICE_BASE64_MAP.get(voice_name)
+                        coded = encode_audio_base64(named_voice_path)
+                        voice_path = save_temp_audio(coded, request_id, "clone")
+                    else:
+                        named_voice_path = VOICE_BASE64_MAP.get("alloy")
+                        coded = encode_audio_base64(named_voice_path)
+                        voice_path = save_temp_audio(coded, request_id, "clone")
+                except Exception as e:
+                    return jsonify({"error": {"message": f"Invalid voice name: {e}", "code": 400}}), 400
+            else:
+                named_voice_path = VOICE_BASE64_MAP.get("alloy")
+                coded = encode_audio_base64(named_voice_path)
+                voice_path = save_temp_audio(coded, request_id, "clone")
 
             if speech_audio_b64:
                 try:
@@ -155,17 +170,15 @@ def audio_endpoint():
                 except Exception as e:
                     return jsonify({"error": {"message": f"Invalid speech_audio: {e}", "code": 400}}), 400
 
-            # If clone_audio is present, ignore voice param
-            pipeline_voice = None if clone_audio_path else voice
+            # If voice_path is present, ignore voice_name param
 
             result = asyncio.run(run_audio_pipeline(
                 reqID=request_id,
                 text=text,
+                voice=voice_path,
                 synthesis_audio_path=speech_audio_path,
-                clone_audio_path=clone_audio_path,
                 clone_audio_transcript=clone_audio_transcript,
                 system_instruction=system_instruction,
-                voice=pipeline_voice
             ))
 
             if result["type"] == "audio":
@@ -188,11 +201,10 @@ def audio_endpoint():
         finally:
             cleanup_temp_file(request_id)
 
-
-
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "alive"}), 200
+
 @app.errorhandler(400)
 def bad_request(e):
     return jsonify({"error": {"message": str(e), "code": 400}}), 400
@@ -203,7 +215,7 @@ def internal_error(e):
     return jsonify({"error": {"message": "Internal server error", "code": 500}}), 500
 
 if __name__ == "__main__":
-    host = "127.0.0.1"
+    host = "0.0.0.0"
     port = 8000
     logger.info(f"Starting Elixpo Audio API Server at {host}:{port}")
     app.run(host=host, port=port, debug=True)

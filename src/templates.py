@@ -44,8 +44,8 @@ def create_speaker_chat(
 
 
     if clone_audio_path:
-        # with open(clone_audio_path, "r") as f:
-        #     reference_audio_data = f.read()
+        with open(clone_audio_path, "r") as f:
+            reference_audio_data = f.read()
         
         if clone_audio_transcript:
             messages.append(
@@ -65,7 +65,7 @@ def create_speaker_chat(
         messages.append(
             Message(
                 role="assistant",  
-                content=[AudioContent(raw_audio=clone_audio_path, audio_url="")],
+                content=[AudioContent(raw_audio=reference_audio_data, audio_url="")],
             )
         )
 

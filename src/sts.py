@@ -1,21 +1,24 @@
 from systemInstruction import generate_higgs_system_instruction
-from utility import encode_audio_base64, save_temp_audio
+from utility import encode_audio_base64, save_temp_audio, validate_and_decode_base64_audio
 from templates import create_speaker_chat
 from synthesis import synthesize_speech
 from stt import generate_stt
-from loguru import logger
 from voiceMap import VOICE_BASE64_MAP
 from typing import Optional
 import asyncio
 from load_models import audio_model
 
 
-async def generate_sts(text: str, audio_base64_path: str, requestID: str, system: Optional[str] = None, clone_path: Optional[str] = None, clone_text: Optional[str] = None, voice: Optional[str] = "alloy") -> str:
-    if clone_path is None:
-        if(voice):
-            load_audio_path = VOICE_BASE64_MAP.get(voice)
-            base64 = encode_audio_base64(load_audio_path)    
-            clone_path = base64
+async def generate_sts(text: str, audio_base64_path: str, requestID: str, system: Optional[str] = None, clone_text: Optional[str] = None, voice: Optional[str] = "alloy") -> str:
+    if (voice):
+        with open(voice, "r") as f:
+            audio_data = f.read()
+            if(validate_and_decode_base64_audio(audio_data)):
+                clone_path = voice
+    else:
+        load_audio_path = VOICE_BASE64_MAP.get("alloy")
+        base64 = encode_audio_base64(load_audio_path)    
+        clone_path = save_temp_audio(base64, requestID, "clone")   
     if system is None:
         system = await generate_higgs_system_instruction(text)
     else:

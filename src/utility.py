@@ -60,46 +60,31 @@ def normalize_text(text: str) -> str:
     return text
 
 
-async def processCloneInputAudio(reference_audio: str, reqID: str):
-    MAX_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024  
+def validate_and_decode_base64_audio(b64str, max_duration_sec=None):
+    import base64, io, wave
 
-    if reference_audio.startswith("http://") or reference_audio.startswith("https://"):
-        return HTTPException(status_code=400, detail="Audio URL is not supported. Please provide base64 encoded audio data.")
-    else:
-        logger.info(f"Using provided audio data for reference: {reference_audio}")
-        if reference_audio.startswith("data:audio/wav;base64,"):
-            b64_data = reference_audio.split(",", 1)[1]
-            try:
-                audio_bytes = base64.b64decode(b64_data)
-            except Exception:
-                return HTTPException(status_code=400, detail="Invalid base64 audio data.")
-            if len(audio_bytes) > MAX_SIZE_BYTES:
-                return HTTPException(status_code=400, detail="Audio file is too large. Maximum allowed size is 5MB.")
-            audio_data_path_clone = save_temp_audio(reference_audio, reqID, "clone")
-            return audio_data_path_clone
-        else:
-            return HTTPException(status_code=400, detail="Invalid audio format. Expected base64 encoded WAV data or audio - URL")
+    # Remove whitespace/newlines
+    b64str = b64str.strip().replace('\n', '').replace('\r', '')
 
-def processSynthesisInputAudio(speechInput: str, reqID: str):
-    MAX_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024  
+    # Fix padding if needed
+    missing_padding = len(b64str) % 4
+    if missing_padding:
+        b64str += '=' * (4 - missing_padding)
 
-    if speechInput.startswith("http://") or speechInput.startswith("https://"):
-        return HTTPException(status_code=400, detail="Audio URL is not supported. Please provide base64 encoded audio data.")
-    else:
-        logger.info(f"Using provided audio data for synthesis: {speechInput}")
-        if speechInput.startswith("data:audio/wav;base64,"):
-            b64_data = speechInput.split(",", 1)[1]
-            try:
-                audio_bytes = base64.b64decode(b64_data)
-            except Exception:
-                return HTTPException(status_code=400, detail="Invalid base64 audio data.")
-            if len(audio_bytes) > MAX_SIZE_BYTES:
-                return HTTPException(status_code=400, detail="Audio file is too large. Maximum allowed size is 5MB.")
-            audio_data_path_synthesis = save_temp_audio(speechInput, reqID, "synthesis")
-            return audio_data_path_synthesis
-        else:
-            return HTTPException(status_code=400, detail="Invalid audio format. Expected base64 encoded WAV data or audio - URL")
-        
+    try:
+        audio_bytes = base64.b64decode(b64str)
+        with io.BytesIO(audio_bytes) as audio_io:
+            with wave.open(audio_io, "rb") as wav_file:
+                n_frames = wav_file.getnframes()
+                framerate = wav_file.getframerate()
+                duration = n_frames / float(framerate)
+                if max_duration_sec and duration > max_duration_sec:
+                    raise Exception(f"Audio duration {duration:.2f}s exceeds max allowed {max_duration_sec}s")
+    except Exception as e:
+        raise Exception(f"Invalid base64 WAV audio: {e}")
+
+    # If no exception, return the original base64 string
+    return b64str
 
 def save_temp_audio(audio_data: str, req_id: str, usageType: str = "clone") -> str:
     if not audio_data:
@@ -109,8 +94,8 @@ def save_temp_audio(audio_data: str, req_id: str, usageType: str = "clone") -> s
     os.makedirs(tmp_dir, exist_ok=True)
     file_path = os.path.join(tmp_dir, f"voice_{req_id}.txt" if usageType == "clone" else f"speech_{req_id}.txt")
 
-    with open(file_path, "wb") as f:
-        f.write(audio_data.encode("utf-8"))
+    with open(file_path, "w") as f:
+        f.write(audio_data)
     logger.debug(f"Saved {len(audio_data)} bytes WAV to {file_path}")
     return file_path
 

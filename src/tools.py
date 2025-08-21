@@ -19,17 +19,13 @@ tools = [
                         "type": "string",
                         "description": "Optional system instruction or scene description for speech synthesis."
                     },
-                    "clone_path": {
-                        "type": "string",
-                        "description": "Optional path to the cloned voice audio file (base64)."
-                    },
                     "clone_text": {
                         "type": "string",
                         "description": "Optional transcript of the cloned voice audio."
                     },
                     "voice": {
                         "type": "string",
-                        "description": "Voice to use for synthesis (default: alloy).",
+                        "description": "Voice to use for cloning (default: alloy).",
                         "default": "alloy"
                     }
                 },
@@ -86,17 +82,13 @@ tools = [
                         "type": "string",
                         "description": "Optional system instruction for speech processing."
                     },
-                    "clone_path": {
-                        "type": "string",
-                        "description": "Optional path to the cloned voice audio file (base64)."
-                    },
                     "clone_text": {
                         "type": "string",
                         "description": "Optional transcript of the cloned voice audio."
                     },
                     "voice": {
                         "type": "string",
-                        "description": "Voice to use for synthesis (default: alloy).",
+                        "description": "Voice to use for cloning (default: alloy).",
                         "default": "alloy"
                     }
                 },

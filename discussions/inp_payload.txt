@@ -11,20 +11,23 @@
         "content": [
             { "type": "text", "text": "Your prompt text here" },
             {
-            "type": "clone_audio",
-            "audio": { "data": "<base64_audio_string>", "format": "wav" }
+                "type": "voice",
+                "voice": { 
+                    "name": "alloy", // or "ballad", "verse", etc.
+                    "data": "<base64_audio_string>", 
+                    "format": "wav"
+                }
             },
             {
-            "type": "clone_audio_transcript",
-            "audio_text": "Transcription or description of the reference audio"
+                "type": "clone_audio_transcript",
+                "audio_text": "Transcription or description of the reference audio"
             },
             {
                 "type": "speech_audio",
                 "audio":  { "data": "<base64_audio_string>", "format": "wav" }
-            },
-            "voice" : "alloy"
+            }
         ]
-        }
+    }
 ]
 
 

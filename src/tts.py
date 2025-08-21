@@ -2,7 +2,7 @@ from templates import create_speaker_chat
 from synthesis import synthesize_speech
 from systemInstruction import generate_higgs_system_instruction
 from intent import getIntentType
-from utility import encode_audio_base64
+from utility import encode_audio_base64, validate_and_decode_base64_audio, save_temp_audio
 from load_models import audio_model
 from voiceMap import VOICE_BASE64_MAP
 import asyncio
@@ -10,12 +10,16 @@ from typing import Optional
 
 
 
-async def generate_tts(text: str,  requestID: str, system: Optional[str] = None, clone_path: Optional[str] = None, clone_text: Optional[str] = None, voice: Optional[str] = "alloy") -> bytes:
-    if clone_path is None:
-        if(voice):
-            load_audio_path = VOICE_BASE64_MAP.get(voice)
-            base64 = encode_audio_base64(load_audio_path)    
-            clone_path = base64
+async def generate_tts(text: str,  requestID: str, system: Optional[str] = None, clone_text: Optional[str] = None, voice: Optional[str] = "alloy") -> bytes:
+    if (voice):
+        with open(voice, "r") as f:
+            audio_data = f.read()
+            if(validate_and_decode_base64_audio(audio_data)):
+                clone_path = voice
+    else:
+        load_audio_path = VOICE_BASE64_MAP.get("alloy")
+        base64 = encode_audio_base64(load_audio_path)    
+        clone_path = save_temp_audio(base64, requestID, "clone")
 
     result = await getIntentType(text, system)
     type = result.get("intent")

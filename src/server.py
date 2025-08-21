@@ -7,10 +7,10 @@ import asyncio
 import shutil
 from tools import tools
 from config import TEMP_SAVE_DIR
-from utility import encode_audio_base64, save_temp_audio, cleanup_temp_file
+from utility import encode_audio_base64, save_temp_audio, cleanup_temp_file, validate_and_decode_base64_audio
 from requestID import reqID
 from typing import Optional
-
+from voiceMap import VOICE_BASE64_MAP
 from tts import generate_tts
 from ttt import generate_ttt
 from sts import generate_sts
@@ -28,24 +28,18 @@ POLLINATIONS_ENDPOINT = "https://text.pollinations.ai/openai"
 async def run_audio_pipeline(
     reqID: str = None,
     text: str = None,
+    voice: str = None,
     synthesis_audio_path: Optional[str] = None, #this is b64 speech input for STS or STT 
-    clone_audio_path: Optional[str] = None, #this is b64 voice clone input
     clone_audio_transcript: Optional[str] = None, #this is transcript of the cloned voice
-    system_instruction: Optional[str] = None,
-    voice: Optional[str] = "alloy" 
+    system_instruction: Optional[str] = None 
 ):
     
-    
-
+    print(f"Recieved the parameters: {reqID}, {text}, {voice}, {synthesis_audio_path}, {clone_audio_transcript}, {system_instruction}")
     logger.info(f" [{reqID}] Starting Audio Pipeline")
-    logger.info(f"Synthesis audio {synthesis_audio_path} | Clone Audio {clone_audio_path}")
-
+    logger.info(f"Synthesis audio {synthesis_audio_path} | Clone Audio {voice}")
     higgs_dir = f"/tmp/higgs/{reqID}"
     os.makedirs(higgs_dir, exist_ok=True)
-    logger.info(f"[{reqID}] Created higgs directory: {higgs_dir}")
-    
-
-    
+    logger.info(f"[{reqID}] Created higgs directory: {higgs_dir}")    
     logger.info(f"[{reqID}] Saved base64 for the required media")
 
     try:
@@ -56,9 +50,9 @@ async def run_audio_pipeline(
 You are Elixpo Audio, an advanced audio synthesis agent that routes requests to the correct pipeline.
 
 Available Functions:
-- generate_tts(text, requestID, system, clone_path, clone_text, voice)
+- generate_tts(text, requestID, system, clone_text, voice)
 - generate_ttt(text, requestID, system)
-- generate_sts(text, synthesis_audio_path, requestID, system, clone_path, clone_text, voice)
+- generate_sts(text, synthesis_audio_path, requestID, system, clone_text, voice)
 - generate_stt(text, synthesis_audio_path, requestID, system)
 
 Available Pipelines:
@@ -67,30 +61,41 @@ Available Pipelines:
 - STS (Speech-to-Speech): Convert speech input to speech output
 - STT (Speech-to-Text): Convert speech input to text output
 
+Hard Rules (Very Important):
+- Only use TTT if the user explicitly requests a text response (e.g., “write”, “write me a script”, “generate a script”, “give me text”, “reply in text”, “text only”, “show me the words”, “don’t speak”, “no audio”).
+- Only use STT if the user explicitly requests a textual transcript/response of their audio (e.g., “transcribe”, “give me the text”, “show me words”, “write what I said”, “text only”, “no audio”).
+- Otherwise, DO NOT choose TTT or STT.
+- Default behavior: 
+  - If input is text-only (no synthesis_audio_path) → TTS by default.
+  - If input includes speech (synthesis_audio_path provided) → STS by default.
+- Always pass arguments exactly as provided; do not modify or omit parameters.
+- Always pass voice_path (if provided) to the `voice` parameter of TTS/STS calls.
+
 Decision Logic:
 
-1. If a synthesis_audio_path is provided:
-   - This means the user has given speech input.
-   - If the instruction or prompt clearly requests a **spoken response** 
-     (e.g., "reply back in voice", "speak it out", "say it", "answer in audio"), use **STS**.
-   - If the instruction or prompt clearly requests a **text response** 
-     (e.g., "transcribe", "give me the text", "show me words", "reply in writing"), use **STT**.
-   - Fallback: If unclear or ambiguous, default to **STT**.
+1) If a synthesis_audio_path is provided (user gave speech):
+   - If the instruction explicitly requests a TEXTUAL output (keywords like: transcribe, text, transcript, write, show words, captions, subtitles, “reply in text”, “no audio”, “text only”) → use STT.
+   - Else → use STS (default).
 
-2. If no synthesis_audio_path is provided:
-   - This means the user input is text-only.
-   - If the instruction or prompt clearly requests the response **spoken aloud** 
-     (e.g., "say this", "convert to speech", "read it", "reply in voice"), use **TTS**.
-   - Otherwise, if the instruction or prompt suggests a **text reply**, use **TTT**.
-   - Fallback: If unclear or ambiguous, default to **TTT**.
+2) If no synthesis_audio_path is provided (user input is text):
+   - If the instruction explicitly requests a TEXTUAL reply ONLY (keywords like: write, script, generate text, “reply in text”, “text only”, “don’t speak”, “no audio”) → use TTT.
+   - Else → use TTS (default).
 
-3. Always pass the arguments exactly as provided. Do not modify or omit parameters.
+3) Ambiguity Handling:
+   - For speech input: if unclear → STS.
+   - For text input: if unclear → TTS.
 
-Your task:
-- Analyze the user’s request (prompt + system_instruction + provided fields).
-- Decide which pipeline applies based on whether input/output is expected in speech or text.
-- If the request is ambiguous, apply the fallback defaults (STT for speech input, TTT for text input).
-- Call the correct function with the given arguments.
+Examples:
+- “Read this out loud” / “Say this” / “Convert to speech” → TTS.
+- “Write me a 30-second ad script” / “Reply in text only” → TTT.
+- (Audio provided) “Transcribe this” / “Give me the text” → STT.
+- (Audio provided) “Answer back in voice” / no explicit text request → STS.
+
+Your task each time:
+- Analyze the user’s prompt + system_instruction + provided fields.
+- Decide the pipeline using the rules above.
+- Call exactly one function with the given arguments, passing voice_path to the `voice` parameter where applicable.
+
 """
 },
 {
@@ -100,9 +105,8 @@ requestID: {reqID}
 prompt: {text}
 synthesis_audio_path: {synthesis_audio_path if synthesis_audio_path else None}
 system_instruction: {system_instruction if system_instruction else None}
-clone_audio_path: {clone_audio_path if clone_audio_path else None}
+voice_path: {voice if voice else None}
 clone_audio_transcript: {clone_audio_transcript if clone_audio_transcript else None}
-voice: {voice}
 
 Analyze this request and call the appropriate pipeline function.
 """
@@ -156,6 +160,7 @@ Analyze this request and call the appropriate pipeline function.
 
             tool_outputs = []
             for tool_call in tool_calls:
+                print(f"[{reqID}] Processing tool call: {tool_call['id']}")
                 fn_name = tool_call["function"]["name"]
                 fn_args = json.loads(tool_call["function"]["arguments"])
                 logger.info(f"[reqID={reqID}] Executing pipeline: {fn_name} with args: {fn_args}")
@@ -167,9 +172,8 @@ Analyze this request and call the appropriate pipeline function.
                             text=fn_args.get("text"),
                             requestID=fn_args.get("requestID"),
                             system=fn_args.get("system"),
-                            clone_path=fn_args.get("clone_path"),
                             clone_text=fn_args.get("clone_text"),
-                            voice=fn_args.get("voice", "alloy")
+                            voice=fn_args.get("voice")
                         )
                         
                         audio_path = os.path.join(higgs_dir, f"{reqID}.wav")
@@ -220,7 +224,6 @@ Analyze this request and call the appropriate pipeline function.
                             audio_base64_path=fn_args.get("synthesis_audio_path"),
                             requestID=fn_args.get("requestID"),
                             system=fn_args.get("system"),
-                            clone_path=fn_args.get("clone_path"),
                             clone_text=fn_args.get("clone_text"),
                             voice=fn_args.get("voice", "alloy")
                         )
@@ -311,25 +314,36 @@ Analyze this request and call the appropriate pipeline function.
 
 if __name__ == "__main__":
     async def main():
-        text = "Give me a voice response if the said fact is true?'"
-        synthesis_audio_path = "sample.wav"
+        text = "Expand some facts on this please"
+        synthesis_audio_path = None
         requestID = reqID()
         voice = "ash"
-        clone_audio_path = None
+        synthesis_audio_path="trialCodes/sample.wav"
         clone_audio_transcript = None
+        
+
         saved_base64_path_clone = None
         saved_base64_path_speech = None
+        result = None
 
-
-        if clone_audio_path:
-            base64_clone_path = encode_audio_base64(clone_audio_path)
-            saved_base64_path_clone = save_temp_audio(base64_clone_path, reqID, "clone")
+        if (VOICE_BASE64_MAP.get(voice)):
+            print(f"[INFO] Using named voice: {voice}")
+            named_voice_audio_path = VOICE_BASE64_MAP.get(voice)
+            named_voice_audio_base64 = encode_audio_base64(named_voice_audio_path)
+            saved_base64_path_clone = save_temp_audio(named_voice_audio_base64, requestID, "clone")
+        else:
+            if(validate_and_decode_base64_audio(voice)):
+                saved_base64_path_clone = save_temp_audio(voice, reqID, "clone")
+            else:
+                named_voice_audio = VOICE_BASE64_MAP.get("alloy")
+                named_voice_audio_base64 = encode_audio_base64(named_voice_audio)
+                saved_base64_path_clone = save_temp_audio(named_voice_audio_base64, requestID, "clone")
     
         if synthesis_audio_path:
             base64_synthesis_audio = encode_audio_base64(synthesis_audio_path)
             saved_base64_path_speech = save_temp_audio(base64_synthesis_audio, reqID, "speech")
 
-        result = await run_audio_pipeline(reqID=requestID, text=text, synthesis_audio_path=saved_base64_path_speech, clone_audio_path=saved_base64_path_clone, clone_audio_transcript=clone_audio_transcript, voice=voice)
+        result = await run_audio_pipeline(reqID=requestID, text=text, voice=saved_base64_path_clone, synthesis_audio_path=saved_base64_path_speech, clone_audio_transcript=clone_audio_transcript)
 
         if not result:
             print("[ERROR] Pipeline returned None")

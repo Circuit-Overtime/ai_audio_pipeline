@@ -54,7 +54,6 @@ The project includes a Dockerfile for easy deployment and reproducibility. The D
 This structure ensures a consistent environment for development, testing, and production, making it straightforward to run the application anywhere Docker is supported.
 
 ---
-
 ## API Endpoints
 
 ### `/audio` Endpoint
@@ -67,17 +66,17 @@ Generate audio from text using optional system prompt and voice.
 
 - `text` (string, required): The text to synthesize.
 - `system` (string, optional): System prompt for context.
-- `voice` (string, optional): Voice selection (default: `alloy`).
+- `voice` (string, optional): Voice selection (e.g., `alloy`, `ballad`, `verse`). Default is `alloy`.
 
 **Example:**
 
 ```bash
-curl -X GET "http://localhost:8000/audio?text=Hello%20world&voice=alloy"
+curl -X GET "http://localhost:8000/audio?text=Transcribe%20this%3A&system=optional_system_prompt&voice=alloy"
 ```
 
 #### `POST /audio`
 
-Flexible endpoint for advanced audio synthesis, voice cloning, and speech input.
+Flexible endpoint for advanced audio synthesis, voice cloning, speech input, and transcription.
 
 **Request Body (JSON):**
 
@@ -87,20 +86,38 @@ Flexible endpoint for advanced audio synthesis, voice cloning, and speech input.
         {
             "role": "system",
             "content": [
-                { "type": "text", "text": "You are a helpful assistant." }
+                { "type": "text", "text": "System instructions here" }
             ]
         },
         {
             "role": "user",
             "content": [
-                { "type": "text", "text": "Say hello in a cheerful voice." },
-                { "type": "voice", "voice": "alloy" }
-                // Optionally, add clone_audio or speech_audio as needed
+                { "type": "text", "text": "Your prompt text here" },
+                {
+                    "type": "voice",
+                    "voice": { 
+                        "name": "alloy", // or "ballad", "verse", etc.
+                        "data": "<base64_audio_string>", 
+                        "format": "wav"
+                    }
+                },
+                {
+                    "type": "clone_audio_transcript",
+                    "audio_text": "Transcription or description of the reference audio"
+                },
+                {
+                    "type": "speech_audio",
+                    "audio": { "data": "<base64_audio_string>", "format": "wav" }
+                }
             ]
         }
     ]
 }
 ```
+
+- To perform **voice cloning**, include a `voice` object with base64-encoded WAV data.
+- To provide **reference audio transcription**, use `clone_audio_transcript`.
+- For **speech input**, use `speech_audio` with base64-encoded WAV data.
 
 **Example:**
 
@@ -112,19 +129,43 @@ curl -X POST http://localhost:8000/audio \
             {
                 "role": "system",
                 "content": [
-                    { "type": "text", "text": "You are a helpful assistant." }
+                    { "type": "text", "text": "System instructions here" }
                 ]
             },
             {
                 "role": "user",
                 "content": [
-                    { "type": "text", "text": "Say hello in a cheerful voice." },
-                    { "type": "voice", "voice": "alloy" }
+                    { "type": "text", "text": "Your prompt text here" },
+                    {
+                        "type": "voice",
+                        "voice": {
+                            "name": "alloy",
+                            "data": "<base64_audio_string>",
+                            "format": "wav"
+                        }
+                    },
+                    {
+                        "type": "clone_audio_transcript",
+                        "audio_text": "Transcription or description of the reference audio"
+                    },
+                    {
+                        "type": "speech_audio",
+                        "audio": { "data": "<base64_audio_string>", "format": "wav" }
+                    }
                 ]
             }
         ]
     }' --output output.wav
 ```
+
+**Response:**  
+- Returns a WAV audio file or a JSON object, depending on the request and processing result.
+
+**Modality Types:**
+- **TTS:** Text-to-Speech (audio output)
+- **STS:** Speech-to-Speech (audio output)
+- **STT:** Speech-to-Text (text output)
+- **TTT:** Text-to-Text (text output)
 
 **Notes:**
 
