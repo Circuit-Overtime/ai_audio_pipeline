@@ -3,3 +3,4 @@ __pycache__/
 higgs_audio_env/
 pretrained_models/
 genAudio/
+k8s/secret.yaml
