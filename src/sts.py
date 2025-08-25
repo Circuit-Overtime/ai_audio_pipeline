@@ -7,7 +7,7 @@ from voiceMap import VOICE_BASE64_MAP
 from typing import Optional
 import asyncio
 from load_models import audio_model
-
+import loggerConfig
 
 async def generate_sts(text: str, audio_base64_path: str, requestID: str, system: Optional[str] = None, clone_text: Optional[str] = None, voice: Optional[str] = "alloy") -> str:
     if (voice):

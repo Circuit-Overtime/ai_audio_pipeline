@@ -12,12 +12,14 @@ from requestID import reqID
 import asyncio
 import threading
 import subprocess
+import logging
 from voiceMap import VOICE_BASE64_MAP
-
+import loggerConfig
 from server import run_audio_pipeline
 
 app = Flask(__name__)
 CORS(app)
+
 
 @app.before_request
 def before_request():

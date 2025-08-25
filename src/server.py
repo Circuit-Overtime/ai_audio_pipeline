@@ -15,7 +15,7 @@ from tts import generate_tts
 from ttt import generate_ttt
 from sts import generate_sts
 from stt import generate_stt
-
+import loggerConfig
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("elixpo-audio")
 
