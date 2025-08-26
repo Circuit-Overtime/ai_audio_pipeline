@@ -17,6 +17,7 @@ Audio Pollinations is a modular Python framework for advanced audio processing, 
 - **Speech Synthesis (TTS):** Natural-sounding voice generation from text.
 - **Semantic Audio Processing:** Deep understanding and manipulation of audio content.
 - **Modular Architecture:** Easily extend or swap components.
+- **Distributed Model Server:** Dedicated model server for efficient resource management.
 - **Server & API:** Ready-to-use server for deploying audio services.
 - **Utilities & Tools:** Helpers for configuration, intent detection, and more.
 
@@ -25,20 +26,62 @@ Audio Pollinations is a modular Python framework for advanced audio processing, 
 ## System Architecture
 
 ```mermaid
-flowchart LR
-    A[User/API Request] --> B[Server]
-    B --> C[Intent Handler]
+flowchart TB
+    A[User/API Request] --> B[Flask App Server :8000]
+    B --> C[Request Handler]
     C --> D{Request Type}
-    D -- "STT" --> E[Speech-to-Text]
-    D -- "TTS" --> F[Text-to-Speech]
-    D -- "Synthesis" --> G[Synthesis Engine]
-    D -- "Transcribe" --> H[Transcription Module]
-    E --> I[Semantic Module]
+    
+    D -- "TTS" --> E[TTS Module]
+    D -- "STS" --> F[STS Module] 
+    D -- "STT" --> G[STT Module]
+    D -- "Transcribe" --> H[Transcribe Module]
+    
+    E --> I[Model Client]
     F --> I
     G --> I
     H --> I
-    I --> J[Response Builder]
-    J --> K[User/API Response]
+    
+    I --> J[HTTP Request]
+    J --> K[Model Server :8001]
+    
+    K --> L{Model Type}
+    L -- "Synthesize" --> M[Higgs Audio Engine]
+    L -- "Transcribe" --> N[Whisper Model]
+    
+    M --> O[Audio Generation]
+    N --> P[Text Transcription]
+    
+    O --> Q[HTTP Response]
+    P --> Q
+    Q --> R[Model Client Response]
+    R --> S[Response Processing]
+    S --> T[User/API Response]
+    
+    subgraph "Main Application (30 Workers)"
+        B
+        C
+        D
+        E
+        F
+        G
+        H
+        I
+        S
+    end
+    
+    subgraph "Model Server (1 Worker)"
+        K
+        L
+        M
+        N
+        O
+        P
+    end
+    
+    style K fill:#e1f5fe
+    style B fill:#f3e5f5
+    style M fill:#fff3e0
+    style N fill:#fff3e0
 ```
 
 ## Docker Structure
@@ -49,12 +92,17 @@ The project includes a Dockerfile for easy deployment and reproducibility. The D
 - **System Dependencies:** Installs essential build tools and `ffmpeg` for audio processing.
 - **Python Dependencies:** Installs all required Python packages from `requirements.txt`.
 - **Source Code:** Copies the entire project into the container.
-- **Entrypoint:** Exposes port 5000 and runs the main application (`src/app.py`) using Python.
+- **Dual Service Architecture:** 
+  - **Model Server (Port 8001):** Single worker handling model inference
+  - **Flask App (Port 8000):** 30 workers handling API requests
+- **Resource Optimization:** Models loaded once in dedicated server, preventing memory duplication.
 
-This structure ensures a consistent environment for development, testing, and production, making it straightforward to run the application anywhere Docker is supported.
+This structure ensures efficient resource utilization with models loaded once while maintaining high concurrency for API requests.
 
 ---
 ## API Endpoints
+
+### Main Application Server (Port 8000)
 
 ### `/audio` Endpoint
 
@@ -161,11 +209,30 @@ curl -X POST http://localhost:8000/audio \
 **Response:**  
 - Returns a WAV audio file or a JSON object, depending on the request and processing result.
 
+### Model Server (Port 8001)
+
+The model server provides internal API endpoints for model inference:
+
+#### `GET /health`
+Health check endpoint for monitoring model server status.
+
+#### `POST /synthesize`
+Internal endpoint for audio synthesis using Higgs Audio Engine.
+
+#### `POST /transcribe`
+Internal endpoint for audio transcription using Whisper model.
+
 **Modality Types:**
 - **TTS:** Text-to-Speech (audio output)
 - **STS:** Speech-to-Speech (audio output)
 - **STT:** Speech-to-Text (text output)
 - **TTT:** Text-to-Text (text output)
+
+**Architecture Benefits:**
+- **Resource Efficiency:** Models loaded once, preventing memory duplication across workers
+- **High Concurrency:** 30 Flask workers handle API requests while 1 model server manages inference
+- **Fault Isolation:** Model server failures don't crash the main application
+- **Scalability:** Independent scaling of API and model servers
 
 **Notes:**
 
@@ -179,8 +246,3 @@ curl -X POST http://localhost:8000/audio \
 
 Audio Pollinations is released under the GNU General Public License v3.0 (GPL-3.0). This license ensures that the project remains free and open-source, allowing anyone to use, modify, and distribute the software, provided that any derivative works are also distributed under the same license. For full details, see the [LICENSE](./LICENSE) file.
 
----
-
-## Issues and Contributions
-
-If you encounter bugs, have feature requests, or want to contribute improvements, please open an issue or submit a pull request via the [GitHub Issues](https://github.com/your-repo/audio.pollinations/issues) page. Contributions are welcome! Please follow the project's guidelines and code of conduct when participating.
