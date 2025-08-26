@@ -1,4 +1,4 @@
-cd ~/audio.pollinations || { echo "Directory not found"; exit 1; }
+cd ~/scratch/audio.pollinations || { echo "Directory not found"; exit 1; }
 
 # Clear port 8000 if in use
 echo "Checking if port 8000 is in use and clearing it..."
@@ -21,4 +21,4 @@ pip install -r requirements.txt
 
 # Start the app with flask
 echo "Starting the app on port 8000..."
-python3 src/app.py &
+gunicorn -w 30 -b 0.0.0.0:8000 src.app:app 

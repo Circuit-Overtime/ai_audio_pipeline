@@ -1,4 +1,4 @@
-from scriptGenerator import generate_reply
+from src.scriptGenerator import generate_reply
 import asyncio
 
 async def generate_ttt(text: str, requestID:str, system: str = None):

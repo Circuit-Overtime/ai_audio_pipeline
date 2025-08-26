@@ -1,21 +1,13 @@
-import os
 import time
 import traceback
-import io
-import wave
-import base64
 from flask import Flask, request, jsonify, Response, g
 from flask_cors import CORS
 from loguru import logger
-from utility import save_temp_audio, cleanup_temp_file, validate_and_decode_base64_audio, encode_audio_base64
-from requestID import reqID
 import asyncio
-import threading
-import subprocess
-import logging
-from voiceMap import VOICE_BASE64_MAP
-import loggerConfig
-from server import run_audio_pipeline
+from src.utility import save_temp_audio, cleanup_temp_file, validate_and_decode_base64_audio, encode_audio_base64
+from src.requestID import reqID
+from src.voiceMap import VOICE_BASE64_MAP
+from src.server import run_audio_pipeline
 
 app = Flask(__name__)
 CORS(app)
@@ -216,8 +208,8 @@ def internal_error(e):
     logger.error(f"Unhandled exception: {traceback.format_exc()}")
     return jsonify({"error": {"message": "Internal server error", "code": 500}}), 500
 
-if __name__ == "__main__":
-    host = "0.0.0.0"
-    port = 8000
-    logger.info(f"Starting Elixpo Audio API Server at {host}:{port}")
-    app.run(host=host, port=port, debug=True)
+# if __name__ == "__main__":
+#     host = "0.0.0.0"
+#     port = 8000
+#     logger.info(f"Starting Elixpo Audio API Server at {host}:{port}")
+#     app.run(host=host, port=port, debug=True)

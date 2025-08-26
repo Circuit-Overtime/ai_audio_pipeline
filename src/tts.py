@@ -1,10 +1,10 @@
-from templates import create_speaker_chat
-from synthesis import synthesize_speech
-from systemInstruction import generate_higgs_system_instruction
-from intent import getIntentType
-from utility import encode_audio_base64, validate_and_decode_base64_audio, save_temp_audio
-from load_models import audio_model
-from voiceMap import VOICE_BASE64_MAP
+from src.templates import create_speaker_chat
+from src.synthesis import synthesize_speech
+from src.systemInstruction import generate_higgs_system_instruction
+from src.intent import getIntentType
+from src.utility import encode_audio_base64, validate_and_decode_base64_audio, save_temp_audio
+from src.load_models import audio_model
+from src.voiceMap import VOICE_BASE64_MAP
 import asyncio
 from typing import Optional
 

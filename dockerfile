@@ -17,4 +17,4 @@ COPY . .
 
 EXPOSE 8000
 ENV FLASK_APP=src/app.py
-CMD ["python3", "src/app.py"]
+CMD ["gunicorn", "-w", "30", "-b", "0.0.0.0:8000", "src.app:app"]

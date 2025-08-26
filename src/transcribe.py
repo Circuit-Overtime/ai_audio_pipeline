@@ -1,6 +1,6 @@
 import base64
 import os
-from load_models import transcribe_model
+from src.load_models import transcribe_model
 from loguru import logger
 import asyncio
 

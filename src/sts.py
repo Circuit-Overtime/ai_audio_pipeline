@@ -3,11 +3,11 @@ from utility import encode_audio_base64, save_temp_audio, validate_and_decode_ba
 from templates import create_speaker_chat
 from synthesis import synthesize_speech
 from stt import generate_stt
-from voiceMap import VOICE_BASE64_MAP
-from typing import Optional
 import asyncio
-from load_models import audio_model
-import loggerConfig
+from typing import Optional
+from src.voiceMap import VOICE_BASE64_MAP
+from src.load_models import audio_model
+import src.loggerConfig
 
 async def generate_sts(text: str, audio_base64_path: str, requestID: str, system: Optional[str] = None, clone_text: Optional[str] = None, voice: Optional[str] = "alloy") -> str:
     if (voice):
