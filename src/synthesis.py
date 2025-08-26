@@ -31,20 +31,14 @@ def reconstruct_message(m):
     return Message(role=m["role"], content=content)
 
 async def synthesize_speech(
-    chatTemplate_path: str,
+    chatTemplate: ChatMLSample,  # Changed from path to actual ChatMLSample object
     seed: Optional[int] = None,
     higgs_engine: Optional[HiggsAudioServeEngine] = None
 ) -> bytes:
     if higgs_engine is None:
         raise HTTPException(status_code=500, detail="TTS engine not initialized")
     try:
-
-        # with open(chatTemplate_path, "r", encoding="utf-8") as f:
-        #     messages = json.load(f)   
-        # chatTemplate = ChatMLSample(messages=[reconstruct_message(m) for m in messages])
-
-
-        chatTemplate = chatTemplate_path
+        # chatTemplate is now already a ChatMLSample object
         logger.info(f"Processing chat template for synthesis")
         temperature: float = 0.6
         top_p: float = 0.95
@@ -90,17 +84,14 @@ async def synthesize_speech(
         raise HTTPException(status_code=500, detail=f"Synthesis failed: {str(e)}")
 
 if __name__ == "__main__":
-    
-
     async def main():
         global higgs_engine
-        # chatTemplate = "/tmp/higgs/request224/chatTemplate.json"
         cloneAudio = "audio.wav"
         base64 = encode_audio_base64(cloneAudio)
         chatTemplate = create_speaker_chat(
             text = "This is a test audio being generated as a part of the api response check",
             requestID = "request12",
-            system = "You are a voice synthesis engine. Speak the user’s text exactly and only as written. Do not add extra words, introductions, or confirmations.",
+            system = "You are a voice synthesis engine. Speak the user's text exactly and only as written. Do not add extra words, introductions, or confirmations.",
             clone_audio_path = base64,
             clone_audio_transcript = None
         )

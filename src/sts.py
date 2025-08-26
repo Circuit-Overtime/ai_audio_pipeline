@@ -1,12 +1,11 @@
-from systemInstruction import generate_higgs_system_instruction
-from utility import encode_audio_base64, save_temp_audio, validate_and_decode_base64_audio
-from templates import create_speaker_chat
-from synthesis import synthesize_speech
-from stt import generate_stt
+from src.systemInstruction import generate_higgs_system_instruction
+from src.utility import encode_audio_base64, save_temp_audio, validate_and_decode_base64_audio
+from src.templates import create_speaker_chat
+from src.model_client import model_client
+from src.stt import generate_stt
 import asyncio
 from typing import Optional
 from src.voiceMap import VOICE_BASE64_MAP
-from src.load_models import audio_model
 import src.loggerConfig
 
 async def generate_sts(text: str, audio_base64_path: str, requestID: str, system: Optional[str] = None, clone_text: Optional[str] = None, voice: Optional[str] = "alloy") -> str:
@@ -23,7 +22,7 @@ async def generate_sts(text: str, audio_base64_path: str, requestID: str, system
         system = await generate_higgs_system_instruction(text)
     else:
         system = f"""
-        "You are a voice synthesis engine. Speak the user’s text exactly and only as written. Do not add extra words, introductions, or confirmations.\n"
+        "You are a voice synthesis engine. Speak the user's text exactly and only as written. Do not add extra words, introductions, or confirmations.\n"
         "Apply the emotions as written in the user prompt.\n"
         "Generate audio following instruction.\n"
         "<|scene_desc_start|>\n"
@@ -38,9 +37,9 @@ async def generate_sts(text: str, audio_base64_path: str, requestID: str, system
         clone_audio_path=clone_path,
         clone_audio_transcript=clone_text
     )
-    audio_bytes = await synthesize_speech(chatTemplate, higgs_engine=audio_model)
+    # Use model client instead of direct model access
+    audio_bytes = await model_client.synthesize_speech(chatTemplate, requestID)
     return audio_bytes
-
 
 if __name__ == "__main__":
     async def main():

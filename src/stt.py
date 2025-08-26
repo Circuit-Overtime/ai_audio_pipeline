@@ -1,8 +1,6 @@
 from loguru import logger
 from typing import Optional
 import asyncio
-import requests
-import os
 from dotenv import load_dotenv
 from src.systemInstruction import generate_higgs_system_instruction
 from src.transcribe import transcribe_audio_from_base64
