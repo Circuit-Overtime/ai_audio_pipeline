@@ -3,9 +3,9 @@ from synthesis import synthesize_speech
 from systemInstruction import generate_higgs_system_instruction
 from intent import getIntentType
 from utility import encode_audio_base64, validate_and_decode_base64_audio, save_temp_audio
-from load_models import audio_model
 from voiceMap import VOICE_BASE64_MAP
 import asyncio
+from load_models import audio_model, transcribe_model
 from typing import Optional
 
 
@@ -40,7 +40,7 @@ async def generate_tts(text: str,  requestID: str, system: Optional[str] = None,
                 {system}\n
             "<|scene_desc_end|>"
             """
-        print(f"The formatted system instruction is:- {system}")
+        # print(f"The formatted system instruction is:- {system}")
         prepareChatTemplate =  create_speaker_chat(
             text = content,
             requestID = requestID,

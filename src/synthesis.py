@@ -1,7 +1,7 @@
 import json
 from typing import Optional
 from boson_multimodal.serve.serve_engine import HiggsAudioServeEngine
-from boson_multimodal.data_types import ChatMLSample, Message, AudioContent
+from boson_multimodal.data_types import Message, AudioContent
 from fastapi import HTTPException
 from utility import set_random_seed
 from loguru import logger
