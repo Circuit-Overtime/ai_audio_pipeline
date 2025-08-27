@@ -1,20 +1,9 @@
-import os
-import time
-import traceback
-import io
-import wave
-import base64
 from flask import Flask, request, jsonify, Response, g
 from flask_cors import CORS
 from loguru import logger
 from utility import save_temp_audio, cleanup_temp_file, validate_and_decode_base64_audio, encode_audio_base64
 from requestID import reqID
-import asyncio
-import threading
-import subprocess
-import logging
 from voiceMap import VOICE_BASE64_MAP
-import loggerConfig
 from server import run_audio_pipeline
 import uuid
 import multiprocessing as mp
@@ -22,7 +11,10 @@ from fastapi import FastAPI, Request, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 import io
-
+import traceback
+from wittyMessages import get_validation_error, get_witty_error
+import time
+import asyncio
 
 
 
@@ -63,7 +55,8 @@ def health_check():
         "endpoints": {
             "GET": "/audio?text=your_text_here&system=optional_system_prompt&voice=optional_voice",
             "POST": "/audio"
-        }
+        },
+        "message": "All systems operational! 🚀"
     })
 
 @app.route("/audio", methods=["GET", "POST"])
@@ -226,19 +219,31 @@ def audio_endpoint():
             return jsonify({"error": {"message": str(e), "code": 500}}), 500
         finally:
             cleanup_temp_file(request_id)
-
+            
 @app.route("/health", methods=["GET"])
 def health():
-    return jsonify({"status": "alive"}), 200
+    return jsonify({"status": "alive", "message": "Still breathing! 💨"}), 200
 
 @app.errorhandler(400)
 def bad_request(e):
-    return jsonify({"error": {"message": str(e), "code": 400}}), 400
+    logger.warning(f"400 error: {str(e)}")
+    return jsonify({"error": {"message": get_validation_error(), "code": 400}}), 400
 
 @app.errorhandler(500)
 def internal_error(e):
-    logger.error(f"Unhandled exception: {traceback.format_exc()}")
-    return jsonify({"error": {"message": "Internal server error", "code": 500}}), 500
+    logger.error(f"Unhandled 500 exception: {traceback.format_exc()}")
+    return jsonify({"error": {"message": get_witty_error(), "code": 500}}), 500
+
+@app.errorhandler(404)
+def not_found(e):
+    logger.info(f"404 error: {request.url}")
+    return jsonify({"error": {"message": "This endpoint went on vacation and forgot to leave a forwarding address! 🏖️", "code": 404}}), 404
+
+@app.errorhandler(405)
+def method_not_allowed(e):
+    logger.info(f"405 error: {request.method} on {request.url}")
+    return jsonify({"error": {"message": "That HTTP method is not invited to this party! Try a different one! 🎉", "code": 405}}), 405
+
 
 if __name__ == "__main__":
     mp.set_start_method('spawn', force=True)

@@ -5,7 +5,7 @@ import os
 from loguru import logger
 import asyncio 
 import loggerConfig
-
+import random
 load_dotenv()
 
 async def generate_reply(prompt: str, max_tokens: Optional[int] = 60) -> str:
@@ -33,7 +33,8 @@ async def generate_reply(prompt: str, max_tokens: Optional[int] = 60) -> str:
         "private": True,
         "token": os.getenv("POLLI_TOKEN"),
         "referrer": "elixpoart",
-        "max_tokens": max_tokens
+        "max_tokens": max_tokens,
+        "seed": random.randint(1000, 1000000)
     }
 
     try:

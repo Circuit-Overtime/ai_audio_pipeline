@@ -5,11 +5,12 @@ import random
 import logging
 import asyncio
 import shutil
+from typing import Optional
+
 from tools import tools
 from config import TEMP_SAVE_DIR
 from utility import encode_audio_base64, save_temp_audio, cleanup_temp_file, validate_and_decode_base64_audio
 from requestID import reqID
-from typing import Optional
 from voiceMap import VOICE_BASE64_MAP
 from tts import generate_tts
 from ttt import generate_ttt
@@ -107,7 +108,6 @@ synthesis_audio_path: {synthesis_audio_path if synthesis_audio_path else None}
 system_instruction: {system_instruction if system_instruction else None}
 voice_path: {voice if voice else None}
 clone_audio_transcript: {clone_audio_transcript if clone_audio_transcript else None}
-
 Analyze this request and call the appropriate pipeline function.
 """
 }
