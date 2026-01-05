@@ -82,11 +82,7 @@ async def generate_reply(prompt: str, max_tokens: Optional[int] = 5000, timing_s
         return f"{prompt}"
 
 async def generate_ttt(text: str, requestID:str, system: str = None):
-    
-
-    replyText = await generate_reply(f"Prompt: {text} & System: {system}", 300, )
-
-    
+    replyText = await generate_reply(f"Prompt: {text} & System: {system}", 300)
     print(f"The generated reply text is: {replyText}")
     return replyText
 
