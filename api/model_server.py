@@ -1,8 +1,6 @@
 from multiprocessing.managers import BaseManager
-from multiprocessing import Queue
 import whisper
 import torch
-import torchaudio as ta
 from loguru import logger
 import time, resource
 import hashlib
