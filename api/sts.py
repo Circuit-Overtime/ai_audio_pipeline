@@ -38,12 +38,7 @@ async def generate_sts(text: str, audio_base64_path: str, requestID: str, system
     content = intention_detection.get("content")
     system = intention_detection.get("system_instruction")
     # generate the audio here 
-    
-    audio_tensor = torch.from_numpy(audio_numpy).unsqueeze(0)
-    buffer = io.BytesIO()
-    torchaudio.save(buffer, audio_tensor, audio_sample, format="wav")
-    audio_bytes = buffer.getvalue()
-    return audio_bytes, audio_sample
+    pass
 
 
 if __name__ == "__main__":
