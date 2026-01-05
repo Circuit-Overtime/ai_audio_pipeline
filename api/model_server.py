@@ -137,7 +137,7 @@ class ipcModules:
         encoded = base62_encode(num)
         return encoded[:length]
 
-    def _speechSynthesis_worker(self, chatTemplate: str, audio_prompt_path: str = None):
+    def _speechSynthesis_worker(self, text: str, audio_prompt_path: str = None):
         with self._operation_semaphore:
             thread_id = threading.current_thread().name
             logger.info(f"[{thread_id}] Starting generation...")
@@ -146,7 +146,7 @@ class ipcModules:
             try:
                 with self._gpu_lock:
                     wav = self.serve_engine.generate(
-                        text=chatTemplate,
+                        text=text,
                         top_p=0.95,
                         temperature=0.8,
                         top_k=1000,
@@ -167,12 +167,12 @@ class ipcModules:
 
             return wav, self.serve_engine.sr
 
-    def speechSynthesis(self, chatTemplate: str, audio_prompt_path: str = None):
-        future = self.executor.submit(self._speechSynthesis_worker, chatTemplate, audio_prompt_path)
+    def speechSynthesis(self, text: str, audio_prompt_path: str = None):
+        future = self.executor.submit(self._speechSynthesis_worker, text, audio_prompt_path)
         return future.result()  
 
-    def speechSynthesis_async(self, chatTemplate: str, audio_prompt_path: str = None):
-        return self.executor.submit(self._speechSynthesis_worker, chatTemplate, audio_prompt_path)
+    def speechSynthesis_async(self, text: str, audio_prompt_path: str = None):
+        return self.executor.submit(self._speechSynthesis_worker, text, audio_prompt_path)
 
     def _transcribe_worker(self, audio_path: str, reqID):
         with self._operation_semaphore:

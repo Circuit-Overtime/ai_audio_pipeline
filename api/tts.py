@@ -36,7 +36,7 @@ async def generate_tts(text: str, requestID: str, system: Optional[str] = None, 
     
     try:
         print(f"[{requestID}] Generating TTS audio with voice: {voice}")
-        wav, sample_rate = service.speechSynthesis(chatTemplate=text, audio_prompt_path=clone_path)
+        wav, sample_rate = service.speechSynthesis(text=text, audio_prompt_path=clone_path)
         
         if wav is None:
             raise RuntimeError("Audio generation failed - GPU out of memory or other error")
