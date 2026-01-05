@@ -17,10 +17,7 @@ service = manager.Service()
 
 async def generate_sts(text: str, audio_base64_path: str, requestID: str, system: Optional[str] = None, voice: Optional[str] = "alloy") -> Tuple[bytes, int]:
     clone_path = None
-    
-    # Resolve voice path
     if voice and not VOICE_BASE64_MAP.get(voice):
-        # Try to use as direct file path
         try:
             with open(voice, "r") as f:
                 audio_data = f.read()
@@ -30,14 +27,11 @@ async def generate_sts(text: str, audio_base64_path: str, requestID: str, system
             print(f"[{requestID}] Failed to load voice from path {voice}: {e}. Falling back to alloy.")
             clone_path = VOICE_BASE64_MAP.get("alloy")
     elif voice and VOICE_BASE64_MAP.get(voice):
-        # Use named voice from map
         clone_path = VOICE_BASE64_MAP.get(voice)
     else:
-        # Default to alloy
         clone_path = VOICE_BASE64_MAP.get("alloy")
     
     try:
-        # Transcribe input audio
         print(f"[{requestID}] Transcribing input audio...")
         transcription = service.transcribe(audio_base64_path, requestID)
         print(f"[{requestID}] Transcription result: {transcription[:100]}...")
@@ -51,13 +45,11 @@ async def generate_sts(text: str, audio_base64_path: str, requestID: str, system
         
         intention = intention_detection.get("intent")
         content = intention_detection.get("content")
-        refined_system = intention_detection.get("system_instruction")
         
         print(f"[{requestID}] Intent: {intention}, Generated content: {content[:100]}...")
         
-        # Generate audio using ChatterboxTurboTTS
         print(f"[{requestID}] Generating STS audio with voice: {voice}")
-        wav, sample_rate = service.speechSynthesis(chatTemplate=content, audio_prompt_path=clone_path)
+        wav, sample_rate = service.speechSynthesis(text=content, audio_prompt_path=clone_path)
         
         if wav is None:
             raise RuntimeError("Audio generation failed - GPU out of memory or other error")

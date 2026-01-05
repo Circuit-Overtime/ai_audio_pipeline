@@ -9,51 +9,6 @@ from typing import Optional
 
 
 
-def normalize_text(text: str) -> str:
-    chinese_to_english = {
-        "\uff0c": ", ",
-        "\u3002": ".",
-        "\uff1a": ":",
-        "\uff1b": ";",
-        "\uff1f": "?",
-        "\uff01": "!",
-        "\uff08": "(",
-        "\uff09": ")",
-        "\u3010": "[",
-        "\u3011": "]",
-        "\u300a": "<",
-        "\u300b": ">",
-        "\u201c": '"',
-        "\u201d": '"',
-        "\u2018": "'",
-        "\u2019": "'",
-        "\u3001": ",",
-        "\u2014": "-",
-        "\u2026": "...",
-        "\u00b7": "."
-    }
-    for zh, en in chinese_to_english.items():
-        text = text.replace(zh, en)
-    text = text.replace("(", " ").replace(")", " ")
-    text = text.replace("\u00b0F", " degrees Fahrenheit")
-    text = text.replace("\u00b0C", " degrees Celsius")
-    tag_replacements = [
-        ("[laugh]", "<SE>[Laughter]</SE>"),
-        ("[music start]", "<SE_s>[Music]</SE_s>"),
-        ("[music end]", "<SE_e>[Music]</SE_e>"),
-        ("[applause]", "<SE>[Applause]</SE>"),
-        ("[cough]", "<SE>[Cough]</SE>"),
-    ]
-    for tag, replacement in tag_replacements:
-        text = text.replace(tag, replacement)
-    lines = text.split("\n")
-    text = "\n".join([" ".join(line.split()) for line in lines if line.strip()])
-    text = text.strip()
-    if text and not any(text.endswith(c) for c in [".", "!", "?", ",", ";", '"', "'", "</SE_e>", "</SE>"]):
-        text += "."
-    return text
-
-
 def validate_and_decode_base64_audio(b64str, max_duration_sec=None):
     import base64, io, wave
 
