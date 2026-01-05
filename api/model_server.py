@@ -43,7 +43,7 @@ class ipcModules:
     logger.info("Loading IPC Device...")
     def __init__(self):
         logger.info("Loading Whisper model...")
-        self.model = whisper.load_model(TRANSCRIBE_MODEL_SIZE)
+        self.model = whisper.load_model(TRANSCRIBE_MODEL_SIZE, device=device, download_root="model_cache", in_memory=True)
         logger.info("Loading ChatterboxTurboTTS model...")
         self.serve_engine = ChatterboxTurboTTS.from_pretrained(device=device, cache_dir=cache_dir)
         logger.info("Models loaded successfully")
