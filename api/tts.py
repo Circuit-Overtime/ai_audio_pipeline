@@ -103,7 +103,7 @@ async def generate_tts(text: str, requestID: str, system: Optional[str] = None, 
     
 if __name__ == "__main__":
     async def main():
-        text = "She sat alone in the quiet room, clutching a faded photograph. Rain tapped gently against the window, echoing the ache in her heart. Years had passed since she lost him, but the emptiness lingered, growing heavier with each memory. She whispered his name, hoping for an answer that would never come. The world moved on, but her world had stopped, frozen in the moment he said goodbye."
+        text = "the weather is chilling cold today, it's foggy and everyone is "
         requestID = "request123"
         system = None
         voice = "ash"

@@ -28,29 +28,28 @@ async def getContentRefined(text: str, system: Optional[str] = None, max_tokens:
                     You are an intent-classification and speech-content extractor. Output ONLY a JSON object:
                     {{"intent": "DIRECT" or "REPLY", "content": "..."}}
                     
-                    Available Paralinguistic Effects for REPLY responses (use sparingly and contextually):
+                    Available Paralinguistic Effects for REPLY responses (use liberally and contextually):
                     {paralinguistics_str}
                     
-                    Rules:
-                    1. intent="DIRECT" when the user wants text spoken exactly as given (quotes, verbs like say/speak/read, verbatim/exact wording). Extract only the text to be spoken, remove command words, keep meaning unchanged, add light punctuation for natural speech. DO NOT add any paralinguistic effects for DIRECT.
+                    DIRECT: User wants text spoken exactly as given. Extract only the text to be spoken, remove command words, keep meaning unchanged, add light punctuation for natural speech. DO NOT add paralinguistic effects for DIRECT.
                     
-                    2. intent="REPLY" when the user expects a conversational answer. Generate a short, natural, human-sounding reply. Intelligently embed paralinguistic markers based on emotional context, tone, and conversational flow:
-                       - Use [laugh] or [chuckle] for humor or joy
-                       - Use [sigh] for resignation, relief, or contemplation
-                       - Use [gasp] for surprise or astonishment
-                       - Use [cough] for discomfort, transition, or emphasis
-                       - Use [sniff] for emotion or sentiment
-                       - Use [clear throat] for emphasis or hesitation
-                       - Use [groan] for frustration or pain
-                       - Use [shush] for confidentiality or urgency
-                       Example: "Oh wow, [gasps] that's absolutely incredible! I'm so [chuckles] impressed!"
+                    REPLY: Generate a short, natural, human-sounding conversational answer. Embed paralinguistic markers based on emotional context and tone:
+                       - [laugh], [chuckle], [giggle] for humor, joy, amusement
+                       - [sigh], [exhale] for resignation, relief, contemplation
+                       - [gasp], [gasp!] for surprise, astonishment, shock
+                       - [cough] [cough] [cough] for emphasis, discomfort, transition
+                       - [sniff], [snffle] for emotion, sentiment, sadness
+                       - [clear throat] for emphasis, hesitation, authority
+                       - [groan], [ugh] for frustration, pain, annoyance
+                       - [shush] for confidentiality, urgency
+                       - [whisper] for intimacy, secrecy
+                       Example: "Oh wow, [gasp!] that's absolutely incredible! I'm [chuckle] so impressed with that!"
                     
-                    3. For both: optimize for TTS with clear punctuation, natural pauses, simple speakable phrasing.
-                    4. Infer intent by context, not keywords alone.
-                    5. Output ONLY the JSON object. No extra text, no emojis or formatting.
-                    6. If it's a REPLY, generate a new natural response with emotionally appropriate paralinguistic effects embedded.
-                    7. Do NOT output dialogue labels such as "Husband:", "Wife:", "SPEAKER1:", etc.
-                    8. The final text must be a continuous natural-flow narrative with conversational turns as plain uninterrupted dialogue.{system_context}
+                    For both: optimize for TTS with clear punctuation, natural pauses, simple speakable phrasing.
+                    Infer intent by context, not keywords alone.
+                    Output ONLY the JSON object. No extra text, no emojis.
+                    If REPLY, generate a new natural response with emotionally appropriate paralinguistic effects embedded throughout.
+                    The final text must be a continuous natural-flow narrative with conversational turns as plain uninterrupted dialogue.{system_context}
                     """
                 
             },
