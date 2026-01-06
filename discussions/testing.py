@@ -25,7 +25,8 @@ def save_audio_response(response: requests.Response, output_file) -> None:
     print(f"✓ Audio saved to {output_file}")
 
 
-def test_tts(text: str = "Hello Good morning and a warm welcome", voice: str = "alloy"):
+def test_tts(text: str = "Hello Good morning and a warm welcome, to you all. Today, we're exploring the fascinating world of artificial intelligence and how it's revolutionizing the way we communicate, work, and create. From machine learning to neural networks, the possibilities are truly endless. Whether you're a developer, a student, or simply curious about technology, this is an exciting time to be part of this journey. Let's dive deep into innovation together!", voice: str = "alloy"):
+     
     print("\n" + "="*60)
     print("TEST 1: TTS (Text-to-Speech)")
     print("="*60)
@@ -384,6 +385,6 @@ if __name__ == "__main__":
     # run_all_tests()
     # test_sts_with_voice_cloning()
     # test_tts()
-    # test_stt()
+    test_stt()
     # test_ttt()
-    test_sts()
+    # test_sts()

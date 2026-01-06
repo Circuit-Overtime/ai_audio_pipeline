@@ -177,7 +177,7 @@ def audio_endpoint():
             speech_audio_path = None
             if speech_audio_b64:
                 try:
-                    validate_and_decode_base64_audio(speech_audio_b64, max_duration_sec=120)
+                    validate_and_decode_base64_audio(speech_audio_b64, max_duration_sec=100)
                     b64_str = speech_audio_b64.strip().replace('\n', '').replace('\r', '')
                     missing_padding = len(b64_str) % 4
                     if missing_padding:
