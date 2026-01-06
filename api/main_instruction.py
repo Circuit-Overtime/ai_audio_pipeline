@@ -20,9 +20,10 @@ Audio input + no voice preference → STS (use default voice)
 Ambiguity follows the default.
 IMPORTANT - Voice Parameter:
 The 'voice' parameter accepts:
-- Voice name: "alloy", "ballad", "coral", etc.
-- Voice path/file: Direct path or base64-encoded audio string for voice cloning
-- Always pass voice_path as the voice parameter when provided
+1. Predefined voice name: "alloy", "ballad", "coral", "dan", "echo", "amuch", etc.
+2. Direct path to .wav file: "/path/to/voice.wav" (must be 5-8 seconds)
+3. If voice name not recognized or file not found: falls back to "alloy"
+Pass voice_path directly as the voice parameter when provided.
 Always pass parameters exactly as provided.
 Call exactly one function.
 Plain text only.
@@ -37,9 +38,9 @@ def user_inst(reqID, text, synthesis_audio_path, system_instruction, voice):
     voice_path: {voice if voice else None}
     
     VOICE HANDLING:
-    - If voice_path is provided: Use it directly as the 'voice' parameter in the function call
-    - voice_path can be a voice name (alloy, ballad, etc.) or a path/base64 string for custom voice cloning
-    - Pass voice_path exactly as-is to the voice parameter
+    - voice can be: a voice name (alloy, ballad, etc.) OR a direct .wav file path
+    - Pass voice directly as-is to the voice parameter
+    - If voice name not in list or file doesn't exist, system will use 'alloy'
     
     Analyze this request and call the appropriate pipeline function.
     If synthesis_audio_path is provided, prefer STS or STT pipelines.

@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify, Response, g
 from flask_cors import CORS
 from loguru import logger
 from gunicorn.app.base import BaseApplication
-from utility import save_temp_audio, validate_and_decode_base64_audio, trim_base64_audio, convertToAudio, cleanup_temp_file
+from utility import validate_and_decode_base64_audio, cleanup_temp_file
 from requestID import reqID
 from voiceMap import VOICE_BASE64_MAP
 from server import run_audio_pipeline
@@ -15,7 +15,6 @@ import asyncio
 import os
 import traceback
 from config import WORKERS, THREADS
-import base64
 import wave
 import io
 
@@ -107,30 +106,27 @@ def audio_endpoint():
                 voice_path = VOICE_BASE64_MAP[system_voice]
                 voice_identifier = system_voice
             else:
+                # Check if it's a direct .wav file path
                 try:
-                    # Validate the base64 audio exists and is decodable (no max duration check yet)
-                    validate_and_decode_base64_audio(system_voice)
+                    if not os.path.isfile(system_voice):
+                        return jsonify({"error": {"message": f"Voice '{system_voice}' not found in voice list and is not a valid file path.", "code": 400}}), 400
                     
-                    # Check minimum duration and trim to 8 seconds max
-                    b64str = system_voice.strip().replace('\n', '').replace('\r', '')
-                    missing_padding = len(b64str) % 4
-                    if missing_padding:
-                        b64str += '=' * (4 - missing_padding)
-                    audio_bytes = base64.b64decode(b64str)
-                    with io.BytesIO(audio_bytes) as audio_io:
-                        with wave.open(audio_io, "rb") as wav_file:
-                            n_frames = wav_file.getnframes()
-                            framerate = wav_file.getframerate()
-                            duration = n_frames / float(framerate)
-                            if duration < 5:
-                                return jsonify({"error": {"message": "Voice reference audio must be at least 5 seconds long.", "code": 400}}), 400
+                    # Validate it's a WAV file and check duration
+                    with wave.open(system_voice, "rb") as wav_file:
+                        n_frames = wav_file.getnframes()
+                        framerate = wav_file.getframerate()
+                        duration = n_frames / float(framerate)
+                        
+                        if duration < 5:
+                            return jsonify({"error": {"message": "Voice reference audio must be at least 5 seconds long.", "code": 400}}), 400
+                        
+                        if duration > 8:
+                            return jsonify({"error": {"message": f"Voice reference audio exceeds 8 seconds ({duration:.2f}s). Please trim to 8 seconds or less.", "code": 400}}), 400
                     
-                    # Trim to 8 seconds if longer
-                    if duration > 8:
-                        logger.info(f"Voice audio duration {duration:.2f}s exceeds 8s, trimming to 8 seconds")
-                        system_voice = trim_base64_audio(system_voice, 8)
-                    
+                    voice_path = system_voice
                     voice_identifier = "custom_voice"
+                except wave.Error:
+                    return jsonify({"error": {"message": "Voice file is not a valid WAV file.", "code": 400}}), 400
                 except Exception as e:
                     return jsonify({"error": {"message": f"Invalid voice: {str(e)}", "code": 400}}), 400
             
@@ -159,12 +155,6 @@ def audio_endpoint():
                             "Content-Length": str(len(audio_data))
                         }
                     )
-            
-            if system_voice not in VOICE_BASE64_MAP:
-                try:
-                    voice_path = save_temp_audio(system_voice, request_id, "clone")
-                except Exception as e:
-                    return jsonify({"error": {"message": f"Failed to process voice audio: {e}", "code": 400}}), 400
             
             speech_audio_path = None
             if speech_audio_b64:

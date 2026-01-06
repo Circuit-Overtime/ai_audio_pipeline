@@ -21,7 +21,7 @@ tools = [
                     },
                     "voice": {
                         "type": "string",
-                        "description": "Voice to use for cloning (default: alloy).",
+                        "description": "Voice to use: predefined voice name (alloy, ballad, coral, etc.) OR direct path to .wav file (5-8 seconds). Defaults to alloy if not found.",
                         "default": "alloy"
                     }
                 },
@@ -80,7 +80,7 @@ tools = [
                     },
                     "voice": {
                         "type": "string",
-                        "description": "Voice to use: predefined voice name (alloy, ballad, coral, etc.) OR voice path/base64 string for custom voice cloning. Pass voice_path directly as this parameter.",
+                        "description": "Voice to use: predefined voice name (alloy, ballad, coral, etc.) OR direct path to .wav file (5-8 seconds). Defaults to alloy if not found.",
                         "default": "alloy"
                     }
                 },

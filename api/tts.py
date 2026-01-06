@@ -36,19 +36,27 @@ service = get_service()
 async def generate_tts(text: str, requestID: str, system: Optional[str] = None, voice: Optional[str] = "alloy") -> tuple:
     global service
     clone_path = None
-    if voice and not VOICE_BASE64_MAP.get(voice):
-        try:
-            with open(voice, "r") as f:
-                audio_data = f.read()
-                if validate_and_decode_base64_audio(audio_data):
-                    clone_path = voice
-        except Exception as e:
-            print(f"[{requestID}] Failed to load voice from path {voice}: {e}. Falling back to alloy.")
-            clone_path = VOICE_BASE64_MAP.get("alloy")
-    elif voice and VOICE_BASE64_MAP.get(voice):
+    
+    # Simple voice handling: name or file path, default to alloy
+    if voice and VOICE_BASE64_MAP.get(voice):
+        # Predefined voice name
         clone_path = VOICE_BASE64_MAP.get(voice)
+        print(f"[{requestID}] Using predefined voice: {voice}")
+    elif voice:
+        # Try to use as file path
+        try:
+            if os.path.isfile(voice):
+                clone_path = voice
+                print(f"[{requestID}] Using voice file: {voice}")
+            else:
+                print(f"[{requestID}] Voice '{voice}' not found in list and not a valid file. Falling back to alloy.")
+                clone_path = VOICE_BASE64_MAP.get("alloy")
+        except Exception as e:
+            print(f"[{requestID}] Error with voice '{voice}': {e}. Falling back to alloy.")
+            clone_path = VOICE_BASE64_MAP.get("alloy")
     else:
         clone_path = VOICE_BASE64_MAP.get("alloy")
+        print(f"[{requestID}] No voice specified, using default: alloy")
     
     intention_detection = await getContentRefined(
             f"This is the prompt and {text} ",
