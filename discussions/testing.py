@@ -78,8 +78,8 @@ def test_tts(text: str = "Oh my god!! I am super surprised on my test results, o
             return False
     except Exception as e:
         elapsed_time = time.time() - start_time
-        print(f"✗ TTS Test FAILED with exception: {str(e)}")
-        print(f"⏱ Time taken: {elapsed_time:.2f}s")
+        print(f"TTS Test FAILED with exception: {str(e)}")
+        print(f"Time taken: {elapsed_time:.2f}s")
         return False
 
 
