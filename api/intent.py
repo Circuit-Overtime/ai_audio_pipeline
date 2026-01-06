@@ -20,7 +20,6 @@ async def getContentRefined(text: str, system: Optional[str] = None, max_tokens:
         system_context = f"\nUser's System Instruction/Style: {system}"
         
     payload = {
-        "model": "gemini-fast",
         "messages": [
             {
                 "role": "system",
@@ -47,7 +46,7 @@ async def getContentRefined(text: str, system: Optional[str] = None, max_tokens:
                     For both: optimize for TTS with clear punctuation, natural pauses, simple speakable phrasing.
                     Infer intent by context, not keywords alone.
                     Output ONLY the JSON object. No extra text, no emojis.
-                    Use paralinguistic effects more so that we have a lively and engaging speech output.
+                    Use paralinguistic effects more so that we have a lively and engaging speech output use a mix of them as needed.
                     If REPLY, generate a new natural response with emotionally appropriate paralinguistic effects embedded throughout.
                     The final text must be a continuous natural-flow narrative with conversational turns as plain uninterrupted dialogue.{system_context}
                     """
@@ -58,7 +57,7 @@ async def getContentRefined(text: str, system: Optional[str] = None, max_tokens:
                 "content": f"Prompt: {text}"
             }
         ],
-        "model" : "openai-large",
+        "model" : "gemini-fast",
         "temperature": 0.7,
         "stream": False,
         "private": True,
