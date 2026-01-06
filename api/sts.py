@@ -17,19 +17,38 @@ service = manager.Service()
 
 async def generate_sts(text: str, audio_base64_path: str, requestID: str, system: Optional[str] = None, voice: Optional[str] = "alloy") -> Tuple[bytes, int]:
     clone_path = None
-    if voice and not VOICE_BASE64_MAP.get(voice):
-        try:
-            with open(voice, "r") as f:
-                audio_data = f.read()
-                if validate_and_decode_base64_audio(audio_data):
+    
+    print(f"[{requestID}] STS pipeline called with voice: {voice}")
+    
+    # Handle voice parameter - can be voice name or voice path/base64
+    if voice:
+        if VOICE_BASE64_MAP.get(voice):
+            # It's a predefined voice name
+            clone_path = VOICE_BASE64_MAP.get(voice)
+            print(f"[{requestID}] Using predefined voice: {voice}")
+        else:
+            # Treat it as a voice path or base64 string for custom cloning
+            try:
+                with open(voice, "r") as f:
+                    audio_data = f.read()
+                    if validate_and_decode_base64_audio(audio_data):
+                        clone_path = voice
+                        print(f"[{requestID}] Using voice from file path: {voice}")
+            except (FileNotFoundError, IOError):
+                # Not a file path, might be base64 string directly
+                try:
+                    validate_and_decode_base64_audio(voice)
                     clone_path = voice
-        except Exception as e:
-            print(f"[{requestID}] Failed to load voice from path {voice}: {e}. Falling back to alloy.")
-            clone_path = VOICE_BASE64_MAP.get("alloy")
-    elif voice and VOICE_BASE64_MAP.get(voice):
-        clone_path = VOICE_BASE64_MAP.get(voice)
+                    print(f"[{requestID}] Using base64-encoded voice data for cloning")
+                except Exception as e:
+                    print(f"[{requestID}] Failed to use custom voice: {e}. Falling back to alloy.")
+                    clone_path = VOICE_BASE64_MAP.get("alloy")
+            except Exception as e:
+                print(f"[{requestID}] Failed to load voice: {e}. Falling back to alloy.")
+                clone_path = VOICE_BASE64_MAP.get("alloy")
     else:
         clone_path = VOICE_BASE64_MAP.get("alloy")
+        print(f"[{requestID}] No voice specified, using default: alloy")
     
     try:
         print(f"[{requestID}] Transcribing input audio...")
@@ -47,7 +66,7 @@ async def generate_sts(text: str, audio_base64_path: str, requestID: str, system
         
         print(f"[{requestID}] Intent: {intention}, Generated content: {content[:100]}...")
         
-        print(f"[{requestID}] Generating STS audio with voice: {'alloy' if voice is None else voice}...")
+        print(f"[{requestID}] Generating STS audio with voice cloning...")
         wav, sample_rate = service.speechSynthesis(text=content, audio_prompt_path=clone_path)
         
         if wav is None:

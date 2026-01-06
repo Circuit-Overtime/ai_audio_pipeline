@@ -58,13 +58,13 @@ tools = [
         "type": "function",
         "function": {
             "name": "generate_sts",
-            "description": "Executes the Speech-to-Speech pipeline to convert speech input to speech output.",
+            "description": "Executes the Speech-to-Speech pipeline to convert speech input to speech output with optional voice cloning.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "text": {
                         "type": "string",
-                        "description": "The prompt or instruction that is to be done!"
+                        "description": "The prompt or instruction for the speech processing."
                     },
                     "synthesis_audio_path": {
                         "type": "string",
@@ -80,7 +80,7 @@ tools = [
                     },
                     "voice": {
                         "type": "string",
-                        "description": "Voice to use for cloning (default: alloy).",
+                        "description": "Voice to use: predefined voice name (alloy, ballad, coral, etc.) OR voice path/base64 string for custom voice cloning. Pass voice_path directly as this parameter.",
                         "default": "alloy"
                     }
                 },
