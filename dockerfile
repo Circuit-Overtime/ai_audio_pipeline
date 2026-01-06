@@ -16,8 +16,8 @@ ENV LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:$LD_LIBRARY_PATH
 ENV CUDA_VISIBLE_DEVICES=0
 
 WORKDIR /app
-RUN python3.12 -m venv /app/higgs_audio_env
-ENV PATH="/app/higgs_audio_env/bin:$PATH"
+RUN python3.12 -m venv /app/venv
+ENV PATH="/app/venv/bin:$PATH"
 
 RUN pip install --upgrade pip setuptools wheel
 RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cu124
