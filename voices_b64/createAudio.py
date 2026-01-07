@@ -10,7 +10,7 @@ Say exactly in around 5-8s audio: Welcome to Elixpo, where innovation meets imag
 
 
 
-voices = ["alloy","echo","fable","onyx","nova","shimmer","coral","verse","ballad","ash","sage","amuch","dan"]
+voices = ["amuch", "marin", "cedar"]
 model = "openai-audio"
 token = os.getenv("POLLI_TOKEN")
 base_url = "https://gen.pollinations.ai/text/"
