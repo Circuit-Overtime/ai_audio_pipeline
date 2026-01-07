@@ -2,7 +2,8 @@ import os
 import sys
 VOICE_BASE64_MAP = {
     "alloy":   "voices_b64/raw_wav/alloy.wav",
-    "amuch":   "voices_b64/raw_wav/amuch.wav",
+    "cedar":   "voices_b64/raw_wav/cedar.wav",
+    "marin":   "voices_b64/raw_wav/marin.wav",
     "ash":     "voices_b64/raw_wav/ash.wav",
     "ballad":  "voices_b64/raw_wav/ballad.wav",
     "coral":   "voices_b64/raw_wav/coral.wav",
